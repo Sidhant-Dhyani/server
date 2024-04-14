@@ -5,6 +5,7 @@ const { MongoClient, GridFSBucket } = require("mongodb");
 const fs = require("fs");
 const multer = require("multer");
 const UserModel = require("./models/user");
+const PDF = require("./models/pdf");
 
 const app = express();
 
@@ -17,27 +18,27 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 const atlas =
-  "mongodb+srv://brahmgaur17:26download12345@cluster0.bl32bqx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+  "mongodb+srv://brahmgaur17:26download12345@cluster0.bl32bqx.mongodb.net/Test";
 
-// const client = new MongoClient(atlas);
+const client = new MongoClient(atlas);
 
-// async function connectToMongoDB() {
-//   try {
-//     await client.connect();
-//     console.log("Connected to MongoDB Atlas");
-//   } catch (error) {
-//     console.error("Error connecting to MongoDB Atlas:", error);
-//   }
-// }
+async function connectToMongoDB() {
+  try {
+    await client.connect();
+    console.log("Connected to MongoDB Atlas1");
+  } catch (error) {
+    console.error("Error connecting to MongoDB Atlas:", error);
+  }
+}
 
-// connectToMongoDB();
+connectToMongoDB();
 
 async function connectToMongoDB1() {
   try {
     await mongoose.connect(
       "mongodb+srv://brahmgaur17:26download12345@cluster0.bl32bqx.mongodb.net/Test"
     );
-    console.log("Connected to MongoDB Atlas");
+    console.log("Connected to MongoDB Atlas2");
   } catch (error) {
     console.error("Error connecting to MongoDB Atlas:", error);
   }
@@ -62,36 +63,56 @@ app.get("/users", (req, res) => {
 //   return;
 // });
 
-// app.post("/upload", upload.single("file"), async (req, res) => {
-//   try {
-//     // Ensure a file is uploaded
-//     if (!req.file) {
-//       return res.status(400).json({ error: "No file uploaded" });
-//     }
+app.post("/upload", upload.single("file"), async (req, res) => {
+  console.log(req.body);
+  try {
+    // Ensure a file is uploaded
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
 
-//     // Connect to the database
-//     const db = client.db("farzi");
-//     const bucket = new GridFSBucket(db);
+    // Connect to the database
+    const db = client.db("Test");
+    const bucket = new GridFSBucket(db);
 
-//     const uploadedFile = req.file;
-//     const uploadStream = bucket.openUploadStream(uploadedFile.originalname);
+    const uploadedFile = req.file;
+    const uploadStream = bucket.openUploadStream(uploadedFile.originalname, {
+      metadata: {
+        contentType: uploadedFile.mimetype,
+        title: req.body.title,
+        author: req.body.author,
+        description: req.body.description,
+      },
+    });
 
-//     // Write the file buffer to GridFS
-//     uploadStream.end(uploadedFile.buffer);
+    // Write the file buffer to GridFS
+    uploadStream.end(uploadedFile.buffer);
 
-//     uploadStream.on("error", (error) => {
-//       console.error("Error uploading file:", error);
-//       res.status(500).json({ error: "Internal Server Error" });
-//     });
+    uploadStream.on("error", (error) => {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    });
 
-//     uploadStream.on("finish", () => {
-//       res.status(200).json({ message: "File uploaded successfully" });
-//     });
-//   } catch (error) {
-//     console.error("Error handling file upload:", error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// });
+    uploadStream.on("finish", async () => {
+      const pdf = new PDF({
+        filename: uploadedFile.originalname,
+        contentType: uploadedFile.mimetype,
+        metadata: {
+          title: req.body.title,
+          author: req.body.author,
+          description: req.body.description,
+        },
+      });
+
+      // Save the Pdf document to the database
+      await pdf.save();
+      res.status(200).json({ message: "File uploaded successfully" });
+    });
+  } catch (error) {
+    console.error("Error handling file upload:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 // app.get("/pdfs", async (req, res) => {
 //   try {
