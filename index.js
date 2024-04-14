@@ -4,8 +4,8 @@ const cors = require("cors");
 const { MongoClient, GridFSBucket } = require("mongodb");
 const fs = require("fs");
 const multer = require("multer");
-const UserModel = require("./models/user");
-const PDF = require("./models/pdf");
+// const UserModel = require("./models/user");
+// const PDF = require("./models/pdf");
 
 const app = express();
 
@@ -46,11 +46,11 @@ async function connectToMongoDB1() {
 
 connectToMongoDB1();
 
-app.get("/users", (req, res) => {
-  UserModel.find()
-    .then((users) => res.json(users))
-    .catch((err) => res.json(err));
-});
+// app.get("/users", (req, res) => {
+//   UserModel.find()
+//     .then((users) => res.json(users))
+//     .catch((err) => res.json(err));
+// });
 
 // app.get("/users", async (req, res) => {
 //   try {
@@ -94,18 +94,6 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     });
 
     uploadStream.on("finish", async () => {
-      const pdf = new PDF({
-        filename: uploadedFile.originalname,
-        contentType: uploadedFile.mimetype,
-        metadata: {
-          title: req.body.title,
-          author: req.body.author,
-          description: req.body.description,
-        },
-      });
-
-      // Save the Pdf document to the database
-      await pdf.save();
       res.status(200).json({ message: "File uploaded successfully" });
     });
   } catch (error) {
@@ -114,68 +102,68 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-// app.get("/pdfs", async (req, res) => {
-//   try {
-//     const db = client.db("farzi");
-//     const bucket = new GridFSBucket(db);
+app.get("/pdfs", async (req, res) => {
+  try {
+    const db = client.db("farzi");
+    const bucket = new GridFSBucket(db);
 
-//     const files = await bucket.find().toArray();
+    const files = await bucket.find().toArray();
 
-//     // Extract relevant file information
-//     const pdfs = files.map((file) => {
-//       return {
-//         filename: file.filename,
-//         contentType: file.contentType,
-//         uploadDate: file.uploadDate,
-//       };
-//     });
+    // Extract relevant file information
+    const pdfs = files.map((file) => {
+      return {
+        filename: file.filename,
+        contentType: file.contentType,
+        uploadDate: file.uploadDate,
+      };
+    });
 
-//     res.status(200).json(pdfs);
-//   } catch (error) {
-//     console.error("Error fetching PDFs:", error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// });
+    res.status(200).json(pdfs);
+  } catch (error) {
+    console.error("Error fetching PDFs:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
-// app.get("/download-pdf/:filename", async (req, res) => {
-//   try {
-//     const db = client.db("farzi");
-//     const bucket = new GridFSBucket(db);
+app.get("/download-pdf/:filename", async (req, res) => {
+  try {
+    const db = client.db("Test");
+    const bucket = new GridFSBucket(db);
 
-//     const filename = req.params.filename;
-//     const downloadStream = bucket.openDownloadStreamByName(filename);
+    const filename = req.params.filename;
+    const downloadStream = bucket.openDownloadStreamByName(filename);
 
-//     // Set response headers
-//     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-//     res.setHeader("Content-Type", "application/pdf");
+    // Set response headers
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Type", "application/pdf");
 
-//     // Pipe the file stream to the response
-//     downloadStream.pipe(res);
-//   } catch (error) {
-//     console.error("Error downloading PDF:", error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// });
+    // Pipe the file stream to the response
+    downloadStream.pipe(res);
+  } catch (error) {
+    console.error("Error downloading PDF:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
-// app.get("/view-pdf/:filename", async (req, res) => {
-//   try {
-//     const db = client.db("farzi");
-//     const bucket = new GridFSBucket(db);
+app.get("/view-pdf/:filename", async (req, res) => {
+  try {
+    const db = client.db("farzi");
+    const bucket = new GridFSBucket(db);
 
-//     const filename = req.params.filename;
-//     const downloadStream = bucket.openDownloadStreamByName(filename);
+    const filename = req.params.filename;
+    const downloadStream = bucket.openDownloadStreamByName(filename);
 
-//     // Set response headers
-//     res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-//     res.setHeader("Content-Type", "application/pdf");
+    // Set response headers
+    res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+    res.setHeader("Content-Type", "application/pdf");
 
-//     // Pipe the file stream to the response
-//     downloadStream.pipe(res);
-//   } catch (error) {
-//     console.error("Error viewing PDF:", error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// });
+    // Pipe the file stream to the response
+    downloadStream.pipe(res);
+  } catch (error) {
+    console.error("Error viewing PDF:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 // app.get('/users', async (req, res)=>{
 //   await UserModel.find().then((users) => res.json(users))
