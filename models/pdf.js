@@ -12,6 +12,6 @@ const pdfSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-const PDF = mongoose.model("PDF", pdfSchema);
 
+const PDF = mongoose.model("PDF", pdfSchema);
 module.exports = PDF;
